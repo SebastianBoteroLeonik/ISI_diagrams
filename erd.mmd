@@ -37,6 +37,7 @@ erDiagram
 
     userProduct }o--|| user : is_owned_by
     offer |o--|| userProduct : contains
+    userProduct }o--|| productCatalog : is_instance
 
     userProduct {
       int userProductId PK
@@ -44,6 +45,7 @@ erDiagram
       int ownerId FK
       string name
       date expiryDate
+      int amount
     }
 
     recipies {

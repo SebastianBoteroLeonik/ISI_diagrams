@@ -9,70 +9,140 @@ classDiagram
     User *-- Fridge
     Offer o-- Product
     Fridge o-- Product
+    catalogProduct <-- Product
+    User --> UserType
 
     OfferRepository --> User
     UserRepository --> User
+
+    AuthenticationService --> UserRepository
+    UserService --> UserRepository
+    FridgeService --> ProductRepository
+    OfferService --> OfferRepository
+
+    OfferAPI --> OfferService
+    FridgeAPI --> FridgeService
 
     %% ================================
     %%          DOMAIN LAYER
     %% ================================
 
+    namespace domain {
+      class User {
+        +username: String
+          -email: String
+          -passwordHash: String
+          -address: Adress
+          -fridge: Fridge
+          +type: UserType
+      }
 
-    class User {
-      %% +offersList: List<Offer>
-      %% +userId: uuid
-      +username: String
-      -email: String
-      -passwordHash: String
-      -address: Adress
-      -fridge: Fridge
-      +type: UserType
-      +postOffer(offer: Offer)
-      +removeOffer(offer: Offer)
+      class UserType {
+        <<Enumeration>>
+        NORMAL
+        PREMIUM
+      }
+
+      class Fridge {
+        +productsList: List~Products~
+          +getProducts(product: Product) List~Products~
+      }
+
+      class Offer {
+        +postDate: Date
+          +postingUser: User
+          %% +reservingUser: User
+          +product: Product
+          +amountOfPruduct: Integer
+      }
+
+      class Product {
+        +name: String
+          +owner: User
+          +expiryDate: Date
+          +catalogReference: catalogProduct
+      }
+
+      class catalogProduct {
+        +catalogName: String
+        +type: String
+      }
     }
 
-    class Fridge {
-      +productsList: List<Products>
-      +getProducts(product: Product): List<Products>
-      +addProduct(product: Product)
-      +removeProduct(product: Product)
-      +editProduct(product: Product)
-    }
-
-    class Offer {
-      +postDate: Date
-      +postingUser: User
-      +product: Product
-      +amountOfPruduct: Integer
-    }
-
-    class Product {
-      +name: String
-      +owner: User
-      +expiryDare: Date
-    }
 
     %% ================================
     %%          API
     %% ================================
 
+    namespace API {
+      class OfferAPI {
+        +postOffer(product: Product, amount: Integer) Offer
+          +removeOffer(offer: Offer)
+          +updateOffer(offer: Offer, product: Product, amount: Integer)
+          +reserveOffer(offer: Offer)
+          +getOffersNearby() List~Offer~
+      }
+
+      class FridgeAPI {
+        +addProduct(product: Product, amountAdded Integer)
+          +removeProduct(product: Product, amountRemoved Integer)
+          +getProductsInFridge() List~Product~
+      }
+
+    }
+
+    %% ================================
+    %%          SERVICES
+    %% ================================
+
+    namespace services {
+      class AuthenticationService {
+        +signupUser(user: User)
+          +validateUserLoginData(email: String, passwordHash: String) User
+      }
+
+      class UserService {
+        +getUserFridge(user: User)
+          +changeUserAdrress(user: User)
+      }
+
+      class FridgeService {
+        +addProduct(product: Product)
+          +removeProduct(product: Product)
+          +editProduct(product: Product)
+      }
+
+      class OfferService {
+        +postOffer(offer: Offer)
+          +removeOffer(offer: Offer)
+          +updateOffer(offer: Offer)
+          +reserveOffer(offer: Offer, reservingUser: User)
+      }
+    }
+
     %% ================================
     %%          REPOSITORIES
     %% ================================
 
-    class UserRepository {
-      +addUser(user: User)
-      +removeUser(user: User)
-      +getUserByEmail(email: String)
-      +getUserByUsername(username: String)
+    namespace repositories {
+      class UserRepository {
+        +addUser(user: User)
+          +removeUser(user: User)
+          +getUserByEmail(email: String)
+          +getUserByUsername(username: String)
+      }
+
+      class OfferRepository {
+        +addOffer(offer: Offer)
+          +removeOffer(offer: Offer)
+          +updateOffer(offer: Offer)
+          +getOffersPostedByUser(user: User)
+      }
+
+      class ProductRepository {
+        +addProduct(product: Product, amount: Integer)
+          +updateProduct(product: Product, amount: Integer)
+          +removeProduct(product: Product, amount: Integer)
+      }
     }
 
-    class OfferRepository {
-      +addOffer(offer: Offer)
-      +removeOffer(offer: Offer)
-      +getOffersPostedByUser(user: User)
-    }
-
-    class ProductRepository {
-      +addProduct(product: Product)
-    }
