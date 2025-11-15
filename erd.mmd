@@ -1,0 +1,67 @@
+erDiagram
+    user {
+      int userId PK
+      string username
+      string email
+      string passwordHash
+      string address
+      string userType
+    }
+
+    reviews }o--|| user: posts
+    reviews }o--|| user: is_reviewed
+
+    reviews {
+      int reviewerId PK, FK
+      int reviewedId PK, FK
+      int rating
+    }
+
+    offer }o--|| user : is_posted_by
+    offer }o--o| user : is_reserved_by
+
+    offer {
+      int odderId PK
+      int productID FK
+      int amountOfPruduct
+      date postDate
+      int postingUserId
+      int reservingUserId
+      string Status
+    }
+
+    productCatalog {
+      int productId PK
+      string nameInCatalog
+    }
+
+    userProduct }o--|| user : is_owned_by
+    offer |o--|| userProduct : contains
+
+    userProduct {
+      int userProductId PK
+      int idInCatalog FK
+      int ownerId FK
+      string name
+      date expiryDate
+    }
+
+    recipies {
+      int recipeId PK
+      string recipeInstructions
+    }
+
+    recipeProducts }|--|| recipies : uses
+    recipeProducts }o--|| productCatalog : is_used
+
+    recipeProducts {
+      int recipeId PK, FK
+      int productId PK, FK
+      int amount
+    }
+
+    foodBanks {
+      int id
+      string name
+      string address
+    }

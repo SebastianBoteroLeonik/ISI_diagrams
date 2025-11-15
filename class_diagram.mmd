@@ -1,0 +1,78 @@
+---
+title: ECOmmunity
+---
+classDiagram
+    %% ================================
+    %%          RELATIONS
+    %% ================================
+
+    User *-- Fridge
+    Offer o-- Product
+    Fridge o-- Product
+
+    OfferRepository --> User
+    UserRepository --> User
+
+    %% ================================
+    %%          DOMAIN LAYER
+    %% ================================
+
+
+    class User {
+      %% +offersList: List<Offer>
+      %% +userId: uuid
+      +username: String
+      -email: String
+      -passwordHash: String
+      -address: Adress
+      -fridge: Fridge
+      +type: UserType
+      +postOffer(offer: Offer)
+      +removeOffer(offer: Offer)
+    }
+
+    class Fridge {
+      +productsList: List<Products>
+      +getProducts(product: Product): List<Products>
+      +addProduct(product: Product)
+      +removeProduct(product: Product)
+      +editProduct(product: Product)
+    }
+
+    class Offer {
+      +postDate: Date
+      +postingUser: User
+      +product: Product
+      +amountOfPruduct: Integer
+    }
+
+    class Product {
+      +name: String
+      +owner: User
+      +expiryDare: Date
+    }
+
+    %% ================================
+    %%          API
+    %% ================================
+
+    %% ================================
+    %%          REPOSITORIES
+    %% ================================
+
+    class UserRepository {
+      +addUser(user: User)
+      +removeUser(user: User)
+      +getUserByEmail(email: String)
+      +getUserByUsername(username: String)
+    }
+
+    class OfferRepository {
+      +addOffer(offer: Offer)
+      +removeOffer(offer: Offer)
+      +getOffersPostedByUser(user: User)
+    }
+
+    class ProductRepository {
+      +addProduct(product: Product)
+    }
