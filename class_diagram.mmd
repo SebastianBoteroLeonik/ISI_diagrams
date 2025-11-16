@@ -3,6 +3,8 @@ title: ECOmmunity
 class:
   htmlLabels: true
   hideEmptyMembersBox: true
+  defaultRenderer: elk
+  textHeight: 50
 config:
   layout: elk
   elk:
@@ -10,80 +12,92 @@ config:
 ---
 
 classDiagram
-
   %% ================================
   %%          RELATIONS
   %% ================================
+  note "<h1>All Classes of the form<br>
+  [Type](API|Service|Repository)<br>
+  are dependent on [Type]<br>
+  Those relations have are not shown<br>
+  for readablity reasons</h1>"
 
-  User *-- Fridge
-  Fridge o-- Product
-  CatalogProduct <-- Product
+  User --> Fridge
+  Product --o Fridge
+  Product --> CatalogProduct
   Offer --> Product
   User --> UserType
+  User --> Location
+  Product --> User
+  FoodBank --> Location
+
   Notification --> NotificationType
   Notification --> User
-  Notification ..> Product
-  Notification ..> Offer
+
+  Notification --> Product
+  Notification --> Offer
+
   RecipeTemplate ..> Recipe
 
-  UserRepository ..> User
-  OfferRepository ..> User
-  OfferRepository ..> Offer
-  ProductRepository ..> Product
-  NotificationRepository ..> Notification
-  FoodBankRepository ..> FoodBank
+  Review --> User
 
+  CatalogProduct --* Recipe
+
+  OfferRepository ..> User
+  OfferRepository ..> Location
+  RecipeRepository ..> RecipeTemplate
+
+  RecipeService --> RecipeRepository
   UserService --> UserRepository
-  UserService ..> User
+
   FridgeService --> ProductRepository
   FridgeService ..> Product
+
   OfferService --> OfferRepository
-  OfferService ..> Offer
   FoodBankService --> FoodBankRepository
-  FoodBankService ..> FoodBank
+  UserService --> UserRepository
+  NotificationService --> NotificationRepository
+  ReviewService --> ReviewRepository
 
   OfferAPI --> OfferService
-  OfferAPI ..> Offer
   OfferAPI ..> Product
+  OfferAPI ..> Location
+
   FridgeAPI --> FridgeService
   FridgeAPI ..> Product
-  FoodBankAPI --> FoodBankService
-  FoodBankAPI ..> FoodBank
 
-  RecipeRepository ..> Recipe
-  RecipeRepository ..> RecipeTemplate
-  RecipeService --> RecipeRepository
-  RecipeService ..> Recipe
+  FoodBankAPI --> FoodBankService
+
+  UserAPI --> UserService
+  UserAPI ..> UserType
+  UserAPI ..> Location
+
+  NotificationAPI --> NotificationService
+
   RecipeAPI --> RecipeService
-  RecipeAPI ..> Recipe
 
   AdminRecipeAPI --> AdminRecipeService
-  AdminRecipeService --> RecipeRepository
-  AdminRecipeAPI ..> Recipe
   AdminRecipeAPI ..> RecipeTemplate
-  AdminRecipeService ..> Recipe
+  ReviewAPI --> ReviewService
+
+  AdminRecipeService --> RecipeRepository
   AdminRecipeService ..> RecipeTemplate
-  RecipeRepository ..> Recipe
 
   AdminProductCatalogAPI --> AdminProductCatalogService
-  AdminProductCatalogService --> ProductCatalogRepository
-  AdminProductCatalogAPI ..> CatalogProduct
-  AdminProductCatalogService ..> CatalogProduct
-  ProductCatalogRepository ..> CatalogProduct
 
+  AdminProductCatalogService --> ProductCatalogRepository
 
   %% ================================
   %%          DOMAIN LAYER
   %% ================================
 
-  namespace domain {
-    class Location {
+  %% namespace domain {
+    class Location:::domain {
       +address: String
         +longitude: Float
         +latitude: Float
     }
 
-    class User {
+    class User:::domain {
       +id: String
         +data: UserData
         +fridge: Fridge
@@ -95,17 +109,17 @@ classDiagram
     }
 
 
-    class UserType {
+    class UserType:::enum {
       <<Enumeration>>
         NORMAL
         PREMIUM
     }
 
-    class Fridge {
+    class Fridge:::domain {
       +productsAndAmounts: List~Pair~Products, Integer~~
     }
 
-    class Offer {
+    class Offer:::domain {
       +id: String
         +postDate: Date
         +postingUser: User
@@ -114,7 +128,7 @@ classDiagram
         +amountOfPruduct: Integer
     }
 
-    class Product {
+    class Product:::domain {
       +id: String
         +name: String
         +owner: User
@@ -122,26 +136,26 @@ classDiagram
         +catalogReference: CatalogProduct
     }
 
-    class CatalogProduct {
+    class CatalogProduct:::domain {
       +id;
       +catalogName: String
         +type: String
     }
 
-    class Recipe {
+    class Recipe:::domain {
       +id: String
         +ingredientsAndAmounts: List~Pair~CatalogProduct, Integer~~
         +instructions: String
         +is_premium: bool
     }
 
-    class RecipeTemplate {
+    class RecipeTemplate:::domain {
       +ingredientIdsAndAmounts: List~Pair~String, Integer~~
         +instructions: String
         +is_premium: bool
     }
 
-    class Notification {
+    class Notification:::domain {
       +id: String
         +target: User
         +type: NotificationType
@@ -150,23 +164,25 @@ classDiagram
         +unread: bool
     }
 
-    class NotificationType {
-      <<<Enumeration>>>
+    class NotificationType:::enum {
+      <<Enumeration>>
         NEARING_EXPIRATION_DATE
         FOOD_EXPIRED
         GOTTEN_RESPONSE_TO_OFFER
     }
 
-    class FoodBank {
+    class FoodBank:::domain {
       +id: String
         +name: String
         +location: Location
     }
 
-    class Review {
-      +id: String
+    class Review:::domain {
+      +rating: Integer
+      +reviewerId: String
+      +revieweeId: String
     }
-  }
+  %% }
 
 
 %% ================================
@@ -174,7 +190,7 @@ classDiagram
 %% ================================
 
   %% namespace API {
-    class OfferAPI {
+    class OfferAPI:::api {
       +postOffer(productId: String, amount: Integer) Offer
         +removeOffer(offerId: String)
         +updateOffer(offerId: String, productId: String, amount: Integer)
@@ -182,39 +198,39 @@ classDiagram
         +getOffersInArea(location: Location, radiusMeters: Integer) List~Offer~
     }
 
-    class FridgeAPI {
+    class FridgeAPI:::api {
       +addProduct(product: Product, amountAdded Integer)
         +removeProduct(product: Product, amountRemoved Integer)
         +getProductsInFridge() List~Product~
     }
 
-    class RecipeAPI {
+    class RecipeAPI:::api {
       +getRecipeSuggestion(userId: String) Recipe
     }
 
-    class AdminRecipeAPI {
+    class AdminRecipeAPI:::api {
       +addRecipe(template: RecipeTemplate) Recipe
         +removeRecipe(recipeId: String)
         +updateRecipe(recipeId: String, template: RecipeTemplate) Recipe
     }
 
-    class AdminProductCatalogAPI {
+    class AdminProductCatalogAPI:::api {
       +addCatalogProduct(name: String, type: String) CatalogProduct
         +removeCatalogProduct(productId: String)
         +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
     }
 
-    class NotificationAPI {
+    class NotificationAPI:::api {
       +getUserNotifications(userId: String) List~Notification~
         +checkUnreadNotifications(userId: String) List~Notification~
     }
 
-    class FoodBankAPI {
+    class FoodBankAPI:::api {
       +getFoodBanksInArea(location: Location, radiusMeters: Integer) List~FoodBank~
         +getFoodBankById(foodBankId: String) FoodBank
     }
 
-    class UserAPI {
+    class UserAPI:::api {
       +registerUser(username: String, email: String, password: String, type: UserType: location: Location) User
         +logInUser(email: String, password: String) User
         +changeUserType(userId: String, userType: UserType) User
@@ -224,8 +240,8 @@ classDiagram
         +deleteAccount(userId: String)
     }
 
-    class ReviewAPI {
-      +reviewUser(revieweeId: String) Review
+    class ReviewAPI:::api {
+      +reviewUser(review: Review)
         +getAverageRating(revieweeId: String) Float
     }
   %% }
@@ -236,8 +252,7 @@ classDiagram
 
   %% namespace services {
 
-    class UserService {
-      %% +getUserFridge() Fridge
+    class UserService:::service {
         +registerUser(username: String, email: String, password: String, type: UserType: location: Location) User
         +logInUser(email: String, password: String) User
         +changeUserType(userId: String, userType: UserType) User
@@ -247,7 +262,7 @@ classDiagram
         +deleteAccount(userId: String)
     }
 
-    class FridgeService {
+    class FridgeService:::service {
       +addProduct(userId: String, product: Product, amount: Integer) Product
         +removeProduct(userId: String, productId: String, amount: Integer)
         +updateProductAmount(userId: String, productId: String, amount: Integer)
@@ -255,7 +270,7 @@ classDiagram
         +getProductAmountById(productId: String) Integer
     }
 
-    class OfferService {
+    class OfferService:::service {
       +postOffer(productId: String, amount: Integer) Offer
         +removeOffer(offerId: String)
         +updateOffer(offerId: String, productId: String, amount: Integer)
@@ -264,32 +279,37 @@ classDiagram
         +getOffersInArea(location: Location, radiusMeters: Interger) List~Offer~
     }
 
-    class RecipeService {
+    class RecipeService:::service {
       getRecipeSeggestion(user: User) Recipe
         getRecipeById(recipeId: String) Recipe
     }
 
-    class AdminRecipeService {
+    class AdminRecipeService:::service {
       +addRecipe(template: RecipeTemplate) Recipe
         +removeRecipe(recipeId: String)
         +updateRecipe(recipeId: String, template: RecipeTemplate) Recipe
     }
 
-    class AdminProductCatalogService {
+    class AdminProductCatalogService:::service {
       +addCatalogProduct(name: String, type: String) CatalogProduct
         +removeCatalogProduct(productId: String)
         +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
     }
 
-    class NotificationService {
+    class NotificationService:::service {
       +getUserNotifications(userId: String) List~Notification~
         +checkUnreadNotifications(userId: String) List~Notification~
         +sendNotification(notification: Notification)
     }
 
-    class FoodBankService {
+    class FoodBankService:::service {
       +getFoodBanksInArea(location: Location, radiusMeters: Integer) List~FoodBank~
         +getFoodBankById(foodBankId: String) FoodBank
+    }
+
+    class ReviewService:::service {
+      +reviewUser(review: Review)
+        +getAverageRating(revieweeId: String) Float
     }
   %% }
 
@@ -299,7 +319,7 @@ classDiagram
 
   %% namespace repositories {
 
-    class UserRepository {
+    class UserRepository:::repository {
       +addUser(username: String, email: String, passwordHash: String, type: UserType, location: Location) User
         +removeUser(userId: String)
         +updateUsername(userId: String, username: String)
@@ -313,16 +333,16 @@ classDiagram
         +getUserById(userId: String)$ User
     }
 
-    class OfferRepository {
-      +addOffer(offer: Offer)
+    class OfferRepository:::repository {
+      +addOffer(+postDate: Date, +userId: String, +product: Product, +amountOfPruduct: Integer) Offer
         +removeOffer(offerId: String)
-        +updateOffer(offerId: String, productId: String, amount: Integer)
-        +getOfferById(offerId: String)
+        +updateOffer(offerId: String, productId: String, amount: Integer) Offer
+        +getOfferById(offerId: String) Offer
         +reserveOffer(offerId: String)
         +getOffersInArea(location: Location, radiusMeters: Interger) List~Offer~
     }
 
-    class ProductRepository {
+    class ProductRepository:::repository {
       +addProduct(product: Product, amount: Integer)
         +updateProductAmount(productId: String, amount: Integer)
         +removeProduct(productId: String, amount: Integer)
@@ -331,7 +351,7 @@ classDiagram
         +getProductsAndAmountsByUserId(userId: String) List~Pair~Product, Integer~~
     }
 
-    class RecipeRepository {
+    class RecipeRepository:::repository {
       +findAndCountProductMatchesToRecipes(productsList: List~Product~, inludePremium: bool) List~Pair~Recipe, Integer~~
         +addRecipe(template: RecipeTemplate) Recipe
         +removeRecipe(recipeId: String)
@@ -339,23 +359,34 @@ classDiagram
         +getRecipeById(recipeId: String) Recipe
     }
 
-    class ProductCatalogRepository {
+    class ProductCatalogRepository:::repository {
       +addCatalogProduct(name: String, type: String) CatalogProduct
         +removeCatalogProduct(productId: String)
         +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
         +getCatalogProductById(productId: String) CatalogProduct
     }
 
-    class NotificationRepository {
-      +getUserNotifications(userId: String)
-        +getNotificationById(notificationId: String)
+    class NotificationRepository:::repository {
+      +getUserNotifications(userId: String) List~Notification~
+        +getUserUnreadNotifications(userId: String) List~Notification~
+        +getNotificationById(notificationId: String) Notification
         +addNotificationToDB(notification: Notification)
         +deleteNotificationFromDB(notificationId: String)
     }
 
-    class FoodBankRepository {
+    class FoodBankRepository:::repository {
       +getFoodBanksInArea(location: Location, radiusMeters: Integer) List~FoodBank~
         +getFoodBankById(foodBankId: String) FoodBank
     }
+
+    class ReviewRepository:::repository {
+      +reviewUser(review: Review)
+        +getAverageRating(revieweeId: String) Float
+    }
   %% }
 
+  classDef domain fill:#caffbf;
+  classDef api fill:#ffd6a5;
+  classDef service fill:#9bf6ff;
+  classDef repository fill:#bdb2ff;
+  classDef enum fill:#ffadad;
