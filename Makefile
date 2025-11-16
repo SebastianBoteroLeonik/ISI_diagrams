@@ -1,5 +1,8 @@
-FILES=erd.svg erd.png class_diagram.svg class_diagram.png
-all: install $(FILES)
+FILES=erd.mmd class_diagram.mmd
+PNG=$(patsubst %.mmd,images/%.png,$(FILES))
+SVG=$(patsubst %.mmd,images/%.svg,$(FILES))
+
+all: install $(PNG) $(SVG)
 
 install: ./node_modules/.bin/mmdc
 
@@ -7,11 +10,11 @@ install: ./node_modules/.bin/mmdc
 	npm install @mermaid-js/mermaid-cli
 	./node_modules/.bin/mmdc -h
 
-%.svg: %.mmd
+images/%.svg: %.mmd
 	./node_modules/.bin/mmdc -i $< -o $@
 
-%.png: %.mmd
+images/%.png: %.mmd
 	./node_modules/.bin/mmdc  -H 5000 -w 5000 -i $< -o $@
 
 clean:
-	-rm $(FILES)
+	-rm images/*
