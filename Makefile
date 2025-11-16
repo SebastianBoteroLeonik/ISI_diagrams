@@ -11,7 +11,7 @@ install: ./node_modules/.bin/mmdc
 	./node_modules/.bin/mmdc -i $< -o $@
 
 %.png: %.mmd
-	./node_modules/.bin/mmdc  -H 2000 -w 2000 -i $< -o $@
+	./node_modules/.bin/mmdc  -H 3000 -w 3000 -i $< -o $@
 
 clean: $(FILES)
 	-rm $(FILES)

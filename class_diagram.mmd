@@ -1,5 +1,10 @@
 ---
 title: ECOmmunity
+class:
+  htmlLabels: true
+  hideEmptyMembersBox: true
+config:
+  layout: elk
 ---
 classDiagram
     %% ================================
@@ -7,21 +12,55 @@ classDiagram
     %% ================================
 
     User *-- Fridge
-    Offer o-- Product
     Fridge o-- Product
-    catalogProduct <-- Product
+    CatalogProduct <-- Product
+    Offer --> Product
     User --> UserType
+    Notification --> NotificationType
+    Notification --> User
+    Notification ..> Product
+    Notification ..> Offer
+    RecipeTemplate ..> Recipe
 
-    OfferRepository --> User
-    UserRepository --> User
+    UserRepository ..> User
+    OfferRepository ..> User
+    OfferRepository ..> Offer
+    ProductRepository ..> Product
+    NotificationRepository ..> Notification
 
     AuthenticationService --> UserRepository
     UserService --> UserRepository
+    UserService ..> User
     FridgeService --> ProductRepository
+    FridgeService ..> Product
     OfferService --> OfferRepository
+    OfferService ..> Offer
 
     OfferAPI --> OfferService
+    OfferAPI ..> Offer
+    OfferAPI ..> Product
     FridgeAPI --> FridgeService
+    FridgeAPI ..> Product
+
+    RecipeRepository ..> Recipe
+    RecipeRepository ..> RecipeTemplate
+    RecipeService --> RecipeRepository
+    RecipeService ..> Recipe
+    RecipeAPI --> RecipeService
+    RecipeAPI ..> Recipe
+    AdminRecipeAPI --> AdminRecipeService
+    AdminRecipeService --> AdminRecipeRepository
+    AdminRecipeAPI ..> Recipe
+    AdminRecipeAPI ..> RecipeTemplate
+    AdminRecipeService ..> Recipe
+    AdminRecipeService ..> RecipeTemplate
+    AdminRecipeRepository ..> Recipe
+    AdminProductCatalogAPI --> AdminProductCatalogService
+    AdminProductCatalogService --> AdminProductCatalogRepository
+    AdminProductCatalogAPI ..> CatalogProduct
+    AdminProductCatalogService ..> CatalogProduct
+    AdminProductCatalogRepository ..> CatalogProduct
+
 
     %% ================================
     %%          DOMAIN LAYER
@@ -29,11 +68,12 @@ classDiagram
 
     namespace domain {
       class User {
-        +username: String
+        +id: String
+          +username: String
           -email: String
           -passwordHash: String
           -address: Adress
-          -fridge: Fridge
+          +fridge: Fridge
           +type: UserType
       }
 
@@ -44,12 +84,12 @@ classDiagram
       }
 
       class Fridge {
-        +productsList: List~Products~
-          +getProducts(product: Product) List~Products~
+        +productsAndAmounts: List~Pair~Products, Integer~~
       }
 
       class Offer {
-        +postDate: Date
+        +id: String
+          +postDate: Date
           +postingUser: User
           %% +reservingUser: User
           +product: Product
@@ -57,15 +97,46 @@ classDiagram
       }
 
       class Product {
-        +name: String
+        +id: String
+          +name: String
           +owner: User
           +expiryDate: Date
-          +catalogReference: catalogProduct
+          +catalogReference: CatalogProduct
       }
 
-      class catalogProduct {
+      class CatalogProduct {
+        +id;
         +catalogName: String
         +type: String
+      }
+
+      class Recipe {
+        +id: String
+        +ingredientsAndAmounts: List~Pair~CatalogProduct, Integer~~
+        +instructions: String
+        +is_premium: bool
+      }
+
+      class RecipeTemplate {
+        +ingredientIdsAndAmounts: List~Pair~String, Integer~~
+        +instructions: String
+        +is_premium: bool
+      }
+
+      class Notification {
+        +id: String
+        +target: User
+        +type: NotificationType
+        +content: String
+        +references: List~Object~
+        +unread: bool
+      }
+
+      class NotificationType {
+        <<<Enumeration>>>
+        NEARING_EXPIRATION_DATE
+        FOOD_EXPIRED
+        GOTTEN_RESPONSE_TO_OFFER
       }
     }
 
@@ -76,10 +147,10 @@ classDiagram
 
     namespace API {
       class OfferAPI {
-        +postOffer(product: Product, amount: Integer) Offer
-          +removeOffer(offer: Offer)
-          +updateOffer(offer: Offer, product: Product, amount: Integer)
-          +reserveOffer(offer: Offer)
+        +postOffer(productId: String, amount: Integer) Offer
+          +removeOffer(offerId: String)
+          +updateOffer(offerId: String, productId: String, amount: Integer)
+          +reserveOffer(offerId: String)
           +getOffersNearby() List~Offer~
       }
 
@@ -89,6 +160,26 @@ classDiagram
           +getProductsInFridge() List~Product~
       }
 
+      class RecipeAPI {
+        +getRecipeSuggestion(userId: String) Recipe
+      }
+
+      class AdminRecipeAPI {
+        +addRecipe(template: RecipeTemplate) Recipe
+        +removeRecipe(recipeId: String)
+        +updateRecipe(recipeId: String, template: RecipeTemplate) Recipe
+      }
+
+      class AdminProductCatalogAPI {
+        +addCatalogProduct(name: String, type: String) CatalogProduct
+        +removeCatalogProduct(productId: String)
+        +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
+      }
+
+      class NotificationAPI {
+        +getUserNotifications(userId: String) List~Notification~
+        +checkUnreadNotifications(userId: String) List~Notification~
+      }
     }
 
     %% ================================
@@ -96,27 +187,55 @@ classDiagram
     %% ================================
 
     namespace services {
+
       class AuthenticationService {
-        +signupUser(user: User)
-          +validateUserLoginData(email: String, passwordHash: String) User
+        +signupUser(user: User)$
+          +validateUserLoginData(email: String, passwordHash: String)$ User
       }
 
       class UserService {
-        +getUserFridge(user: User)
-          +changeUserAdrress(user: User)
+        +getUserFridge() Fridge
+          +changeUserAdrress(address: String)
       }
 
       class FridgeService {
-        +addProduct(product: Product)
-          +removeProduct(product: Product)
-          +editProduct(product: Product)
+        +fridge: Fridge
+        +addProduct(product: Product, amount: Integer)
+          +removeProduct(productId: String, amount: Integer)
+          +updateProduct(product: Product, amount: Integer)
+          +getProductById(productId: String) Product
+          +getProductAmountById(productId: String) Integer
       }
 
       class OfferService {
-        +postOffer(offer: Offer)
-          +removeOffer(offer: Offer)
-          +updateOffer(offer: Offer)
-          +reserveOffer(offer: Offer, reservingUser: User)
+        +postOffer(productId: String, amount: Integer) Offer
+          +removeOffer(offerId: String)
+          +updateOffer(offerId: String, productId: String, amount: Integer)
+          +getOfferById(offerId: String)
+          +reserveOffer(offerId: String, reservingUser: User)
+      }
+
+      class RecipeService {
+        getRecipeSeggestion(user: User) Recipe
+        getRecipeById(recipeId: String) Recipe
+      }
+
+      class AdminRecipeService {
+        +addRecipe(template: RecipeTemplate) Recipe
+        +removeRecipe(recipeId: String)
+        +updateRecipe(recipeId: String, template: RecipeTemplate) Recipe
+      }
+
+      class AdminProductCatalogService {
+        +addCatalogProduct(name: String, type: String) CatalogProduct
+        +removeCatalogProduct(productId: String)
+        +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
+      }
+
+      class NotificationService {
+        +getUserNotifications(userId: String) List~Notification~
+        +checkUnreadNotifications(userId: String) List~Notification~
+        +sendNotification(notification: Notification)
       }
     }
 
@@ -128,21 +247,55 @@ classDiagram
       class UserRepository {
         +addUser(user: User)
           +removeUser(user: User)
-          +getUserByEmail(email: String)
-          +getUserByUsername(username: String)
+
+          +updateUsername(userId: String, username: String)
+          +updateEmail(userId: String, email: String)
+          +updatePassword(userId: String, passwordHash: String)
+          +updateAddress(userId: String, address: String)
+
+          +getOffersPostedByUser(user: User) List~Offers~
+          +getUserByEmail(email: String)$ User
+          +getUserByUsername(username: String)$ User
+          +getUserById(userId: String)$ User
       }
 
       class OfferRepository {
         +addOffer(offer: Offer)
-          +removeOffer(offer: Offer)
-          +updateOffer(offer: Offer)
-          +getOffersPostedByUser(user: User)
+          +removeOffer(offerId: String)
+          +updateOffer(offerId: String, productId: String, amount: Integer)
+          +getOfferById(offerId: String)
+          +reserveOffer(offerId: String)
       }
 
       class ProductRepository {
         +addProduct(product: Product, amount: Integer)
           +updateProduct(product: Product, amount: Integer)
-          +removeProduct(product: Product, amount: Integer)
+          +removeProduct(productId: String, amount: Integer)
+          +getProductById(productId: String) Product
+          +getProductAmountById(productId: String) Integer
+          +getProductsAndAmountsByUserId(userId: String) List~Pair~Product, Integer~~
+      }
+
+      class RecipeRepository {
+        +findAndCountProductMatchesToRecipes(productsList: List~Product~, inludePremium: bool) List~Pair~Recipe, Integer~~
+          +addRecipe(template: RecipeTemplate) Recipe
+          +removeRecipe(recipeId: String)
+          +updateRecipe(recipeId: String, template: RecipeTemplate) Recipe
+          +getRecipeById(recipeId: String) Recipe
+      }
+
+      class ProductCatalogRepository {
+        +addCatalogProduct(name: String, type: String) CatalogProduct
+          +removeCatalogProduct(productId: String)
+          +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
+          +getCatalogProductById(productId: String) CatalogProduct
+      }
+
+      class NotificationRepository {
+        +getUserNotifications(userId: String)
+        +getNotificationById(notificationId: String)
+        +addNotificationToDB(notification: Notification)
+        +deleteNotificationFromDB(notificationId: String)
       }
     }
 

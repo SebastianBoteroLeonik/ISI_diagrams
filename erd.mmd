@@ -67,3 +67,16 @@ erDiagram
       string name
       string address
     }
+
+    notifications }o--|| user: notifies
+    notifications }o--o| userProduct: references
+    notifications }o--o| offer: references
+
+    notifications {
+      int id PK
+      int userId FK
+      string type
+      string content
+      int productReferenced FK
+      int offerReferenced FK
+    }
