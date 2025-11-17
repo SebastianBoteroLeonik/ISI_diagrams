@@ -1,3 +1,8 @@
+---
+title: ECOmmunity
+config:
+  layout: elk
+---
 erDiagram
     user {
       int userId PK
@@ -79,4 +84,15 @@ erDiagram
       string content
       int productReferenced FK
       int offerReferenced FK
+    }
+
+    offerReports }o--|| user: reports
+    offerReports }o--|| offer: is_reported
+
+    offerReports {
+        int id PK
+        int offerId FK
+        int reporterId FK
+        string reasonType
+        string explanation
     }

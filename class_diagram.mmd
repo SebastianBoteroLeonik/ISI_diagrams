@@ -18,7 +18,7 @@ classDiagram
   note "<h1>All Classes of the form<br>
   [Type](API|Service|Repository)<br>
   are dependent on [Type]<br>
-  Those relations have are not shown<br>
+  Those relations are not shown<br>
   for readablity reasons</h1>"
 
   User --> Fridge
@@ -85,6 +85,19 @@ classDiagram
   AdminProductCatalogAPI --> AdminProductCatalogService
 
   AdminProductCatalogService --> ProductCatalogRepository
+
+  OfferAPI --> ReportService
+  OfferAPI ..> ReportReason
+  ModerationAPI --> ReportService
+  ModerationAPI --> UserService
+  ModerationAPI ..> Report
+  ModerationAPI ..> User
+  ReportService --> OfferReportsRepository
+  ReportService ..> ReportReason
+  OfferReportsRepository ..> ReportReason
+  Report --> ReportReason
+  Report --> User
+  Report --> Offer
 
   %% ================================
   %%          DOMAIN LAYER
@@ -182,6 +195,21 @@ classDiagram
       +reviewerId: String
       +revieweeId: String
     }
+
+    class Report:::domain {
+      +id: String
+      +offer: Offer
+      +reportingUser: User
+      +reason: ReportReason
+      +explanation: String
+    }
+
+    class ReportReason:::enum {
+      OFFENSIVE
+      FRAUD
+      SPAM
+      OTHER
+    }
   %% }
 
 
@@ -196,6 +224,7 @@ classDiagram
         +updateOffer(offerId: String, productId: String, amount: Integer)
         +reserveOffer(offerId: String)
         +getOffersInArea(location: Location, radiusMeters: Integer) List~Offer~
+        +reportOffer(offerId: String, reason: ReportReason, explanation: String)
     }
 
     class FridgeAPI:::api {
@@ -245,6 +274,13 @@ classDiagram
       +reviewUser(review: Review)
         +getAverageRating(revieweeId: String) Float
     }
+    class ModerationAPI:::api {
+      +getReportById(reportId: String) Report
+        +getReportsByReportingUserId(userId: String) List~Report~
+        +getReportsByReportedUserId(userId: String) List~Report~
+        +getReportsByReportedofferId(offerId: String) List~Report~
+        +getUsersWithLowRating(threshold: float) List~User~
+    }
   %% }
 
 %% ================================
@@ -254,13 +290,14 @@ classDiagram
   %% namespace services {
 
     class UserService:::service {
-        +registerUser(username: String, email: String, password: String, type: UserType: location: Location) User
+      +registerUser(username: String, email: String, password: String, type: UserType: location: Location) User
         +logInUser(email: String, password: String) User
         +changeUserType(userId: String, userType: UserType) User
         +changeUserPassword(userId: String, password: String) User
         +changeUserEmail(userId: String, email: String) User
         +changeUserLocation(userId: String, location: Location) User
         +deleteAccount(userId: String)
+        +getUsersWithLowRating(threshold: float) List~User~
     }
 
     class FridgeService:::service {
@@ -313,6 +350,14 @@ classDiagram
       +reviewUser(review: Review)
         +getAverageRating(revieweeId: String) Float
     }
+
+    class ReportService:::service {
+      +reportUser(offerId: String, reason: ReportReason, explanation: String)
+      +getReportById(reportId: String) Report
+      +getReportsByReportingUserId(userId: String) List~Report~
+      +getReportsByReportedUserId(userId: String) List~Report~
+      +getReportsByReportedofferId(offerId: String) List~Report~
+    }
   %% }
 
 %% ================================
@@ -330,9 +375,10 @@ classDiagram
         +updateLocation(userId: String, location: Location)
         +updateType(userId: String, type: UserType)
         +getOffersPostedByUser(user: User) List~Offers~
-        +getUserByEmail(email: String)$ User
-        +getUserByUsername(username: String)$ User
-        +getUserById(userId: String)$ User
+        +getUserByEmail(email: String) User
+        +getUserByUsername(username: String) User
+        +getUserById(userId: String) User
+        +getUsersWithLowRating(threshold: float) List~User~
     }
 
     class OfferRepository:::repository {
@@ -385,6 +431,14 @@ classDiagram
     class ReviewRepository:::repository {
       +reviewUser(review: Review)
         +getAverageRating(revieweeId: String) Float
+    }
+
+    class OfferReportsRepository:::repository {
+      +addReport(offerId: String, reason: ReportReason, explanation: String)
+        +getReportById(reportId: String) Report
+        +getReportsByReportingUserId(userId: String) List~Report~
+        +getReportsByReportedUserId(userId: String) List~Report~
+        +getReportsByReportedofferId(offerId: String) List~Report~
     }
   %% }
 
