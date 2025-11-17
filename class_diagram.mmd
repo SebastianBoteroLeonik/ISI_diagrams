@@ -218,6 +218,7 @@ classDiagram
       +addCatalogProduct(name: String, type: String) CatalogProduct
         +removeCatalogProduct(productId: String)
         +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
+        +searchProductsByName(searchTerm: Sting) List~CatalogProduct~
     }
 
     class NotificationAPI:::api {
@@ -294,6 +295,7 @@ classDiagram
       +addCatalogProduct(name: String, type: String) CatalogProduct
         +removeCatalogProduct(productId: String)
         +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
+        +searchProductsByName(searchTerm: Sting) List~CatalogProduct~
     }
 
     class NotificationService:::service {
@@ -364,6 +366,7 @@ classDiagram
         +removeCatalogProduct(productId: String)
         +updateCatalogProduct(productId: String, name: String, type: String) CatalogProduct
         +getCatalogProductById(productId: String) CatalogProduct
+        +findFuzzyMatchesForName(matchTerm: Sting) List~CatalogProduct~
     }
 
     class NotificationRepository:::repository {
